@@ -1,0 +1,161 @@
+---
+title: "Passing Efficiency and Team Success: A Simple Linear Regression Report of NFL Team Statistics"
+author: "By Prasanna Sai Rohit Durbha"
+abstract: "Modern American football analytics stress on efficiency rather than raw totals. In particular, the metric “expected points added” (EPA) summarises how much each play changes a team’s scoring expectation, making it a crucial way to calculate a team's offensive performance. This study asks whether teams that are more efficient on passing plays tend to out‑score their rivals over an NFL season. Using the NFL team statistics dataset, which contains season‑level outcomes and metrics such as average offensive EPA per pass play [@score_nfl], we fit a simple linear regression model with score differential (points scored minus points allowed) as the response and average offensive EPA per pass as the predictor. The fitted model shows a strong positive association. That is, a 0.1‑point increase in EPA per pass predicts roughly a 57‑point improvement in season‑long score differential. Although efficient passing explains about half of the variability in point margins, substantial residual variation remains, highlighting the importance of other factors such as defence and special teams."
+format:
+  pdf:
+    number-sections: true
+    extra_dependencies: ["float"]
+date: today
+date-format: long
+thanks: "Project repository available at: [https://github.com/rohitDurbha/CS261A_Paper1_RohitDurbha](https://github.com/rohitDurbha/CS261A_Paper1_RohitDurbha)."
+bibliography: references.bib
+citeproc: true
+link-citations: true
+---
+
+## Introduction
+
+Success in the National Football League (NFL) depends on more than total yardage or the sheer number of big plays. Modern NFL analytics have shifted their attention toward *expected points added* (EPA), a statistic that “measures how much value each play adds to a team’s chances of scoring” [@cu_epa]. Unlike yards gained, EPA values depend on down, distance and field position; a three‑yard gain on third‑and‑two is often worth more than a ten‑yard gain on first‑and‑ten. EPA is computed as the difference between the expected points after a play and the expected points before it [@cu_epa]. Positive values mean the play increased the team’s scoring expectation, while negative values indicate the opposite. In modern times, EPA per play has become a key metric for comparing players, teams and play‑calling strategies.
+
+The NFL Team Statistics dataset hosted by the SCORE Sports Data Repository contains team‑season level information across multiple seasons [@score_nfl]. In addition to basic outcomes like wins, points scored and points allowed, the dataset includes advanced offensive and defensive measures by play type. Recent trends show a particular interest in the variable *offense/defense_ave_epa_pass/run*, which captures the **average expected points added per play** for a given play type. For offence, higher EPA values indicate that the team’s passing plays consistently increase expected points; for defence, more negative values indicate better performance. These variables allow for assessing the relationship between efficiency and success at the team level.
+
+This paper tries to address the following research question: **does a team’s average offensive EPA per pass play predict its season‑long score differential?** Here, Score differential is defined as the points scored minus points allowed. This metric summarises how decisively a team outscored (or was outscored by) its rivals over a season. If passing efficiency strongly influences team success, we would expect teams with higher EPA per pass to have more positive score differentials. Prior analyses have examined the effect of EPA on win probability or individual player evaluation, but fewer studies have quantified its season‑level relationship with team point margins. Understanding this relationship can inform roster construction and play‑calling.
+
+The rest of this report is as follows. @sec-data describes the dataset, including the observational units, relevant variables and any preprocessing steps.  @sec-methods presents the statistical methods used—specifically, a simple linear regression model—and discusses the assumptions underlying the analysis.  @sec-results reports the fitted model, interprets the coefficients in plain language and evaluates model fit using $R^2$ and residual diagnostics. The paper concludes with the discussion @sec-discussion of the implications and limitations of the findings.
+
+## Data {#sec-data}
+
+### Observational units and variables
+
+Each row in the NFL team statistics dataset represents a single NFL team in a particular regular season [@score_nfl].  The dataset therefore contains one observational unit per team per year.  Below we describe the variables relevant to our analysis and discuss why they might—or might not—be related to one another.
+
+* **season:** the calendar year of the regular season.  It indexes the time dimension but is not used as a predictor here.
+* **team:** a three‑letter abbreviation identifying the franchise.  Team identifiers are useful for merging but not used directly in regression.
+* **points_score:** the total number of points scored by the team over the season.  This is one component of **score differential** and is therefore expected to be strongly, positively associated with it.
+* **points_allowed:** the total number of points the team’s defence allowed.  Because score differential is computed as points scored minus points allowed, we expect a strong negative association between points_allowed and score_differential.
+* **wins**, **losses** and **ties:** counts of games won, lost and tied.  Teams that win more games generally have larger score differentials, but these counts are not analysed directly here.
+* **score_differential:** defined as points_score minus points_allowed.  A positive value means the team outscored its opponents over the season; a negative value means the opposite.  This is our response variable \(Y\).
+* **offense_ave_epa_pass:** the average expected points added per offensive passing play.  Higher values indicate that, on average, each pass play increases the team’s expected points more relative to a baseline.  As successful passing often leads to scoring drives, we expect offense_ave_epa_pass to correlate positively with both points_score and score_differential.  However, the relationship may not be perfect because defence, rushing efficiency and special teams also affect the final point margin.
+
+The dataset also includes several offensive and defensive variables that capture different facets of team performance such as rushing EPA, total air yards, yards after catch, interceptions and fumbles. While these variables could improve a multivariate analysis, we restrict ourselves to a single predictor to satisfy the requirements of simple linear regression.  Additionally, focusing on **offense_ave_epa_pass** allows us to examine whether a team’s passing efficiency alone is a meaningful driver of scoring outcomes, while acknowledging that other factors will contribute to residual variation.
+
+### Data collection and preprocessing
+
+The data are compiled by the SCORE Sports Data Repository from publicly available NFL play‑by‑play and team statistics sources.  EPA metrics are derived from play‑level expected points models that account for down, distance, field position and time remaining [@cu_epa].  For each team and season, total EPA and the number of plays are summed to compute average EPA per play.  Because a one‑unit change in EPA per pass corresponds to an enormous change in expected points over a season, team‑season values of \(\text{EPA}_{\text{pass}}\) typically range from roughly –0.25 to +0.4.
+
+Before analysis we performed basic preprocessing.  We inspected the data for missing values and found that 11 team‑season rows lacked complete EPA information.  These observations were omitted, leaving 764 complete cases (corresponding to 763 degrees of freedom in the fitted model).
+
+There are other alternative sources to the NFL data. Proprietary services such as Pro Football Focus [@pff] and Next Gen Stats [@ngs] provide in-depth information on player tracking, play design and graded performance.  Access to this data could allow more sophisticated modelling, for example by accounting for quarterback accuracy or defensive coverage.  However, these sources are not freely accessible.  Within the realm of public data, Pro‑Football‑Reference and the NFL’s own Game Statistics & Information System offer season‑level summaries similar to those used here. The SCORE dataset was chosen because it includes expected points metrics derived from advanced play‑by‑play analysis, enabling us to evaluate passing efficiency more directly than raw yardage or scoring totals.
+
+### Descriptive statistics
+
+To gain insight into the distributions of our variables of interest, we first examine box plots of **offense_ave_epa_pass** and **score_differential**.   @fig-nfl-boxplots displays side‑by‑side box plots for these variables.  Offensive EPA per pass ranges roughly from −0.3 to 0.4 expected points per play, with most teams clustered near zero.  Score differential varies more widely—from about −200 to +300 points—reflecting the wide spectrum of team success across a season.
+
+```{r fig.pos="H", fig-nfl-boxplots, fig.cap="Box plots of average offensive EPA per pass (left) and score differential (right)", echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(gridExtra)
+nfl <- read.csv("/Users/rohitdurbha/Documents/GitHub/CS261A_Paper1_RohitDurbha/Data/nfl-team-statistics.csv", stringsAsFactors = FALSE)
+nfl <- na.omit(nfl)
+p_a <- ggplot(nfl, aes(y = offense_ave_epa_pass)) +
+  geom_boxplot(fill = "lightblue", alpha = 0.7) +
+  labs(y = "Average offensive EPA per pass", x = "") +
+  theme_minimal()
+p_b <- ggplot(nfl, aes(y = score_differential)) +
+  geom_boxplot(fill = "lightcoral", alpha = 0.7) +
+  labs(y = "Score differential", x = "") +
+  theme_minimal()
+gridExtra::grid.arrange(p_a, p_b, ncol = 2)
+```
+
+To visualise the spread of the data without any model overlay, Figure @fig-nfl-scatter-raw presents the scatterplot without the fitted regression line.  Viewing the raw points helps convey the variability in team outcomes at similar levels of passing efficiency.
+
+
+```{r fig.pos="H", fig-nfl-scatter-raw, fig.cap="Scatter plot of score differential versus average offensive EPA per pass without fitted line", echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+nfl <- read.csv("/Users/rohitdurbha/Documents/GitHub/CS261A_Paper1_RohitDurbha/Data/nfl-team-statistics.csv", stringsAsFactors = FALSE)
+nfl <- na.omit(nfl)
+ggplot(nfl, aes(x = offense_ave_epa_pass, y = score_differential)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Score differential vs. average offensive EPA per pass (without regression line)", x = "Average offensive EPA per pass", y = "Score differential") +
+  theme_minimal()
+```
+
+## Methods {#sec-methods}
+
+To examine the relationship between passing efficiency and team success we employ a **simple linear regression** model. Let
+
+$$
+Y_i = \text{score differential for team }i,\quad X_i = \text{average offensive EPA per pass for team }i.
+$$
+
+We postulate that
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i.
+$$
+
+where $\beta_0$ is the intercept, $\beta_1$ is the slope, and $\varepsilon_i$ are independent error terms assumed to have mean zero and constant variance $\sigma^2$. The slope $\beta_1$ represents the expected change in score differential associated with a one‑unit increase in offensive EPA per pass. Although a one‑unit change in EPA per pass is unrealistic (team‑season values vary by only a few tenths), the coefficient can be rescaled to interpret more plausible changes (e.g., 0.1 units). Fitting the model yields estimates $\hat{\beta}_0$ and $\hat{\beta}_1$ via least squares.
+
+
+## Results {#sec-results}
+
+### Fitted model
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+#| echo: false
+#| 
+library(ggplot2)
+lm_model <- lm(score_differential ~ offense_ave_epa_pass, data = nfl)
+summary(lm_model)
+```
+
+
+```{r tbl-coef-table, echo=FALSE}
+library(knitr)
+lm_coeff <- summary(lm_model)$coefficients
+
+custom_table <- data.frame(
+      Parameter = c("$\\beta_0$ (Intercept)", "$\\beta_1$ (Slope)"),
+      Estimate = round(lm_coeff[, "Estimate"], 2),
+      `Std error` = round(lm_coeff[, "Std. Error"], 2),
+      `t-value` = round(lm_coeff[, "t value"], 2),
+      `p-value` = format.pval(lm_coeff[, "Pr(>|t|)"], eps = .001, digits = 2),
+      check.names = FALSE
+    )
+
+    kable(
+      custom_table,
+      escape = FALSE,
+      caption = "Estimated coefficients from the regression of score differential on average offensive EPA per pass"
+    )
+```
+
+The slope estimate $\hat{\beta}_1 \approx 573.77$ is positive and highly significant. Because a one‑unit increase in EPA per pass play is enormous, it is more meaningful to interpret smaller increments: a 0.1‑unit improvement in EPA per pass corresponds to an expected increase of about $573.77 \times 0.1 \approx 57$ points in score differential over a season. Therefore, teams that consistently add just one tenth of a point of expected scoring per passing play can expect to outscore their opponents by roughly a touchdown per game more than they would otherwise. The intercept $\hat{\beta}_0$ is –4.81, implying that a team with zero EPA per pass (neither gaining nor losing expected points on passing plays) would be expected to finish the season with a roughly even point margin. The p‑value of 0.047 indicates that the intercept differs marginally from zero.
+
+### Goodness of fit and interpretation
+
+The model explains a substantial portion of the variability in the score differential variable. The coefficient of determination is $R^2 = 0.56$, meaning that about 56 % of the variation in team point margins is dependent on differences in offensive passing efficiency. This is quite high for a single‑predictor model in a complex sport where many factors contribute to success. The residual standard error is approximately 66.9 points, indicating that actual score differentials deviate from the fitted line by about ±67 points on average. Such variability reflects unmodelled factors including defensive performance, rushing efficiency, turnovers, injuries and schedule strength—that also influence game outcomes.
+
+
+```{r fig.pos="H", fig-nfl-scatter, fig.cap="Score differential versus average offensive EPA per pass", echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+ggplot(nfl, aes(x = offense_ave_epa_pass, y = score_differential)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, colour = "blue") +
+  labs(title = "Score differential vs. average offensive EPA per pass", x = "Average offensive EPA per pass", y = "Score differential") +
+  theme_minimal()
+```
+
+Figure @fig-nfl-scatter plots score differential against offensive EPA per pass for each team‑season.  The upward trend suggests that teams with more efficient passing attacks tend to outscore their opponents over the course of the season.  However, the scatter indicates substantial variation around the trend line, highlighting the roles of defence, rushing and other factors. Some teams with near‑average passing efficiency still achieve high point margins (perhaps due to strong defence or special teams), while others with efficient passing attacks are outscored because of a porous defence. In summary, passing efficiency is a major determinant of team success but not the sole factor.
+
+## Discussion {#sec-discussion}
+
+The main purpose of this project was to check if teams that get a better advantage on passing plays tend to out‑score their opponents over a season. To measure this, we used expected points added (EPA) per pass, which estimates how many points a team’s chances of scoring increase (or decrease) after each pass play. By fitting a simple line to the data, it was found that teams with higher EPA per pass tend to have much better point margins, which makes sense even if thought from a common sense standpoint. In fact, nudging your EPA per pass up by just 0.1 points, which is a minor margin, corresponds to roughly 57 more points over the whole season. This direct link between passing efficiency and scoring margin answers our main research question that yes, better passing efficiency is associated with a bigger advantage on the scoreboard.
+
+There are a few good things about the approach used in this analysis. The dataset consisted several years’ worth of official NFL data, so the sample is quite broad. EPA takes the game situation (down, distance, field position) into account, making it a smarter measure than most simpler metrics such as total yardage. And the one‑predictor model offers a simple explanation: we are just looking at how one number moves with another. On the other hand, there are limitations to this analysis. Firstly, We only looked at passing, while a team’s success depends on many other parts of the game such as running the ball, playing defence, avoiding turnovers and most importantly, factors which are not quantifiable such as team morale. Because this analysis was an observation based on previous data, we cannot confirm that improving EPA causes better results. Most teams that usually end up on the top of the leaderboard year over year tend be good at what they do and have better strategies than other teams. EPA is also an estimate, so it contains a bit of measurement noise. And by treating each season as independent we ignore the fact that the same coaches and players may carry over from year to year. With more detailed data like game‑by‑game or even play‑by‑play information, we could analyze how passing efficiency interacts with things like opponent strength, weather or game situation. We might also look at different outcomes, such as how passing efficiency relates to making the playoffs or winning championships. Collecting and analysing these additional data would give a fuller picture of what makes NFL teams successful.
+
+## References
