@@ -16,7 +16,7 @@ link-citations: true
 
 ## Introduction
 
-Success in the National Football League (NFL) depends on more than total yardage or the sheer number of big plays. Modern NFL analytics have shifted their attention toward *expected points added* (EPA), a statistic that “measures how much value each play adds to a team’s chances of scoring” [@cu_epa]. Unlike yards gained, EPA values depend on down, distance and field position; a three‑yard gain on third‑and‑two is often worth more than a ten‑yard gain on first‑and‑ten. EPA is computed as the difference between the expected points after a play and the expected points before it [@cu_epa]. Positive values mean the play increased the team’s scoring expectation, while negative values indicate the opposite. In modern times, EPA per play has become a key metric for comparing players, teams and play‑calling strategies.
+Success in the National Football League (NFL) depends on more than total yardage or the sheer number of big plays. Modern NFL analytics have shifted their attention toward *expected points added* (EPA), a statistic that “measures how much value each play adds to a team’s chances of scoring” [@cu_epa]. EPA is computed as the difference between the expected points after a play and the expected points before it [@cu_epa]. Positive values mean the play increased the team’s scoring expectation, while negative values indicate the opposite. In modern times, EPA per play has become a key metric for comparing players, teams and play‑calling strategies.
 
 The NFL Team Statistics dataset hosted by the SCORE Sports Data Repository contains team‑season level information across multiple seasons [@score_nfl]. In addition to basic outcomes like wins, points scored and points allowed, the dataset includes advanced offensive and defensive measures by play type. Recent trends show a particular interest in the variable *offense/defense_ave_epa_pass/run*, which captures the **average expected points added per play** for a given play type. For offence, higher EPA values indicate that the team’s passing plays consistently increase expected points; for defence, more negative values indicate better performance. These variables allow for assessing the relationship between efficiency and success at the team level.
 
@@ -44,7 +44,7 @@ The dataset also includes several offensive and defensive variables that capture
 
 The data are compiled by the SCORE Sports Data Repository from publicly available NFL play‑by‑play and team statistics sources.  EPA metrics are derived from play‑level expected points models that account for down, distance, field position and time remaining [@cu_epa].  For each team and season, total EPA and the number of plays are summed to compute average EPA per play.  Because a one‑unit change in EPA per pass corresponds to an enormous change in expected points over a season, team‑season values of \(\text{EPA}_{\text{pass}}\) typically range from roughly –0.25 to +0.4.
 
-Before analysis we performed basic preprocessing.  We inspected the data for missing values and found that 11 team‑season rows lacked complete EPA information.  These observations were omitted, leaving 764 complete cases (corresponding to 763 degrees of freedom in the fitted model).
+Before analysis we performed basic preprocessing.  We inspected the data for missing values and found that 11 team‑season rows lacked complete EPA information.  These observations were omitted, leaving 764 complete cases (corresponding to about 762 degrees of freedom in the fitted model).
 
 There are other alternative sources to the NFL data. Proprietary services such as Pro Football Focus [@pff] and Next Gen Stats [@ngs] provide in-depth information on player tracking, play design and graded performance.  Access to this data could allow more sophisticated modelling, for example by accounting for quarterback accuracy or defensive coverage.  However, these sources are not freely accessible.  Within the realm of public data, Pro‑Football‑Reference and the NFL’s own Game Statistics & Information System offer season‑level summaries similar to those used here. The SCORE dataset was chosen because it includes expected points metrics derived from advanced play‑by‑play analysis, enabling us to evaluate passing efficiency more directly than raw yardage or scoring totals.
 
@@ -68,16 +68,16 @@ p_b <- ggplot(nfl, aes(y = score_differential)) +
 gridExtra::grid.arrange(p_a, p_b, ncol = 2)
 ```
 
-To visualise the spread of the data without any model overlay, Figure @fig-nfl-scatter-raw presents the scatterplot without the fitted regression line.  Viewing the raw points helps convey the variability in team outcomes at similar levels of passing efficiency.
+To visualise the spread of the data without any model overlay,  @fig-nfl-scatter-raw presents the scatterplot without the fitted regression line.  Viewing the raw points helps convey the variability in team outcomes at similar levels of passing efficiency.
 
 
-```{r fig.pos="H", fig-nfl-scatter-raw, fig.cap="Scatter plot of score differential versus average offensive EPA per pass without fitted line", echo=FALSE, message=FALSE, warning=FALSE}
+```{r fig.pos="H", fig-nfl-scatter-raw, fig.cap="Scatter plot of score differential vs average offensive EPA per pass without fitted line", echo=FALSE, message=FALSE, warning=FALSE}
 library(ggplot2)
 nfl <- read.csv("/Users/rohitdurbha/Documents/GitHub/CS261A_Paper1_RohitDurbha/Data/nfl-team-statistics.csv", stringsAsFactors = FALSE)
 nfl <- na.omit(nfl)
 ggplot(nfl, aes(x = offense_ave_epa_pass, y = score_differential)) +
   geom_point(alpha = 0.6) +
-  labs(title = "Score differential vs. average offensive EPA per pass (without regression line)", x = "Average offensive EPA per pass", y = "Score differential") +
+  labs(title = "Score differential vs. average offensive EPA per pass", x = "Average offensive EPA per pass", y = "Score differential") +
   theme_minimal()
 ```
 
@@ -97,6 +97,20 @@ $$
 
 where $\beta_0$ is the intercept, $\beta_1$ is the slope, and $\varepsilon_i$ are independent error terms assumed to have mean zero and constant variance $\sigma^2$. The slope $\beta_1$ represents the expected change in score differential associated with a one‑unit increase in offensive EPA per pass. Although a one‑unit change in EPA per pass is unrealistic (team‑season values vary by only a few tenths), the coefficient can be rescaled to interpret more plausible changes (e.g., 0.1 units). Fitting the model yields estimates $\hat{\beta}_0$ and $\hat{\beta}_1$ via least squares.
 
+### Assumptions and Residual Diagnostics
+
+For the linear regression model to be valid, several key assumptions must hold:
+
+1. **Linearity** – The relationship between offensive EPA per pass and score differential should be roughly linear.
+2. **Independence** – Each team-season is independent, as teams play different schedules each year.
+3. **Homoscedasticity** – The spread of residuals should remain constant across fitted values.
+4. **Normality** – The residuals (errors) should follow a roughly normal distribution.
+
+We checked these assumptions by inspecting residual plots.
+
+### Software Used 
+
+All analyses were conducted in R 4.5 [@rbase] and using RStudio.  After reading the CSV file, missing observations were removed.  The model was fit using the `lm()` function, which computes the least‑squares estimates and associated standard errors.  Diagnostic plots (not shown) were examined to assess the validity of the linear regression assumptions.  The residuals were roughly symmetric with no obvious pattern in the residual‑versus‑fitted plot, supporting the assumptions of linearity and homoscedasticity.  Observations correspond to distinct team‑seasons, so independence is reasonable.  The large sample size makes minor deviations from normality of errors inconsequential for inference.
 
 ## Results {#sec-results}
 
@@ -150,7 +164,20 @@ ggplot(nfl, aes(x = offense_ave_epa_pass, y = score_differential)) +
   theme_minimal()
 ```
 
-Figure @fig-nfl-scatter plots score differential against offensive EPA per pass for each team‑season.  The upward trend suggests that teams with more efficient passing attacks tend to outscore their opponents over the course of the season.  However, the scatter indicates substantial variation around the trend line, highlighting the roles of defence, rushing and other factors. Some teams with near‑average passing efficiency still achieve high point margins (perhaps due to strong defence or special teams), while others with efficient passing attacks are outscored because of a porous defence. In summary, passing efficiency is a major determinant of team success but not the sole factor.
+ @fig-nfl-scatter plots score differential against offensive EPA per pass for each team‑season.  The upward trend suggests that teams with more efficient passing attacks tend to outscore their opponents over the course of the season.  However, the scatter indicates substantial variation around the trend line, highlighting the roles of defence, rushing and other factors. Some teams with near‑average passing efficiency still achieve high point margins (perhaps due to strong defence or special teams), while others with efficient passing attacks are outscored because of a porous defence. In summary, passing efficiency is a major determinant of team success but not the sole factor.
+
+
+```{r fig.pos="H", fig-nfl-residuals, fig.cap="Residual vs Fitted plot and Q–Q plot", echo=FALSE, message=FALSE, warning=FALSE}
+par(mfrow = c(1, 2))
+plot(lm_model, which = 1)  # Residuals vs Fitted
+plot(lm_model, which = 2)  # Q-Q plot
+par(mfrow = c(1, 1))
+```
+
+The residual vs fitted plot in  @fig-nfl-residuals helps check whether the relationship between passing efficiency and score differential is truly linear and whether the errors have constant variance (homoscedasticity). In this graph, the differences between actual and predicted values are scattered randomly around the horizontal line at zero. This shows that there is no clear pattern, i.e.., The linear model fits the data reasonably well. The spread of points is roughly equal across all fitted values, so the assumption of constant variance is also satisfied. A few outliers appear at the top and bottom, but they do not show any systematic curve or funnel shape, suggesting that the model’s linear form is appropriate.
+
+
+Correspondingly, The Q-Q plot (  @fig-nfl-residuals) checks if the residuals follow a normal distribution, which is an assumption needed for valid significance tests and confidence intervals in regression. In this plot, most points fall closely along the diagonal reference line, meaning the residuals are approximately normally distributed. Only a few points deviate slightly at the extreme ends. This indicates that the normality assumption is well met, and the model’s inference results such as p-values and confidence intervals are reliable.
 
 ## Discussion {#sec-discussion}
 
