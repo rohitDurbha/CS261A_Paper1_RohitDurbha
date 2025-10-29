@@ -1,4 +1,4 @@
-# More Than Just Yards: How Passing EﬀiciencySeparates the NFL’s Best Teams
+# More Than Just Yards: How Passing Eﬀiciency Separates the NFL’s Best Teams
 
 ## Author(s) and Date of Submission
 **Author:** Prasanna Sai Rohit Durbha  
