@@ -1,8 +1,8 @@
-# Passing Efficiency and Team Success: A Simple Linear Regression Report of NFL Team Statistics
+# More Than Just Yards: How Passing EﬀiciencySeparates the NFL’s Best Teams
 
 ## Author(s) and Date of Submission
 **Author:** Prasanna Sai Rohit Durbha  
-**Date of Submission:** September 24, 2025
+**Date of Submission:** October 28, 2025
 
 ## Project Structure
 
@@ -13,7 +13,7 @@
   Main analysis and report documents, including references and any supplementary materials.
 
 - `.gitignore`  
-  Specifies files and folders excluded from version control.
+  Specifies files and folders excluded from version control (.DS_store).
 
 - Other scripts or notebooks as needed for the analysis.
 
@@ -33,3 +33,7 @@ External resources were utilized for this project.
 
 The NFL Team Statistics dataset used in this project was obtained from the SCORE Sports Data Repository (https://data.scorenetwork.org/football/nfl-team-statistics.html).  
 **License:** Please refer to the SCORE Data Repository for specific licensing policies regarding data use. If no explicit license is listed, usage is assumed to be permitted for academic/non-commercial research.  
+
+
+## R
+The analysis for this Regression report was done on RStudio (https://www.R-project.org/)
